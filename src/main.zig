@@ -17,6 +17,7 @@ pub fn main() !void {
     var Tokenizer = tokenizer_pkg.Tokenizer.init(json);
 
     const tokens_list = try Tokenizer.parse(allocator);
+
     defer {
         for (tokens_list.items) |token| {
             allocator.free(token.raw_value);
