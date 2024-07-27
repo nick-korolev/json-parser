@@ -25,7 +25,7 @@ pub fn main() !void {
     }
 
     for (tokens_list.items) |token| {
-        std.debug.print("token: {}\n", .{token});
+        std.debug.print("token: {}\n, token_value: {s}\n", .{ token, token.raw_value });
     }
 
     // _ = try ast.buildAST(allocator, &tokens_list);
