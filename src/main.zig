@@ -10,10 +10,16 @@ pub fn main() !void {
             .ok => {},
         }
     }
-    _ = gpa.allocator();
+    const allocator = gpa.allocator();
 
     const json = "{ \"test\": 1 }";
     var Tokenizer = tokenizer_pkg.Tokenizer.init(json);
 
-    _ = Tokenizer.parse();
+    const tokens_list = try Tokenizer.parse(allocator);
+    defer {
+        for (tokens_list.items) |token| {
+            allocator.free(token);
+        }
+        tokens_list.deinit();
+    }
 }

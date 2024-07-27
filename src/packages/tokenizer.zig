@@ -1,5 +1,12 @@
 const std = @import("std");
 
+const TokenType = enum {
+    String,
+    Number,
+};
+
+const Token = struct { Type: TokenType, RawValue: []const u8 };
+
 pub const Tokenizer = struct {
     source: []const u8,
     index: usize,
@@ -23,33 +30,50 @@ pub const Tokenizer = struct {
         return self.source[self.index];
     }
 
-    pub fn parse(self: *Tokenizer) *Tokenizer {
-        // skipping initial {
-        self.*.index += 1;
-        // var token = Token{
-        //     .column = 1,
-        //     .line = 1,
-        //     .offset = 0,
-        //     .key = "",
-        //     .value = "",
-        // };
-
-        while (self.peek() != '}') {
-            const char = self.peek();
-            if (char == '"') {
-                self.*.index += 1;
-                var index: usize = 0;
-                while (self.peek() != '"') {
-                    std.debug.print("subsymbol: {c}\n", .{self.peek()});
-                    index += 1;
-                    self.*.index += 1;
-                    std.debug.print("index {}\n", .{index});
-                }
+    pub fn parse(self: *Tokenizer, allocator: std.mem.Allocator) !std.ArrayList([]const u8) {
+        var tokens = std.ArrayList([]const u8).init(allocator);
+        errdefer {
+            for (tokens.items) |token| {
+                allocator.free(token);
             }
-            std.debug.print("symbol: {c}\n", .{char});
+            tokens.deinit();
+        }
+
+        try tokens.append(try allocator.dupe(u8, "{"));
+
+        var current_token = std.ArrayList(u8).init(allocator);
+        defer current_token.deinit();
+
+        while (self.*.index < self.source.len) {
+            const char = self.source[self.*.index];
+
+            switch (char) {
+                '{', '}', ':' => {
+                    if (current_token.items.len > 0) {
+                        try tokens.append(try current_token.toOwnedSlice());
+                    }
+                    try tokens.append(try allocator.dupe(u8, &[_]u8{char}));
+                },
+                ' ', '\t', '\n', '\r' => {
+                    if (current_token.items.len > 0) {
+                        try tokens.append(try current_token.toOwnedSlice());
+                        current_token = std.ArrayList(u8).init(allocator);
+                    }
+                },
+                else => {
+                    try current_token.append(char);
+                },
+            }
+
             self.*.index += 1;
         }
 
-        return self;
+        if (current_token.items.len > 0) {
+            try tokens.append(try current_token.toOwnedSlice());
+        }
+
+        std.debug.print("tokens {s}", .{tokens.items});
+
+        return tokens;
     }
 };
