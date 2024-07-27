@@ -1,5 +1,6 @@
 const std = @import("std");
 const tokenizer_pkg = @import("./packages/tokenizer.zig");
+const ast = @import("./packages/ast.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -22,4 +23,6 @@ pub fn main() !void {
         }
         tokens_list.deinit();
     }
+
+    _ = try ast.buildAST(allocator, &tokens_list);
 }

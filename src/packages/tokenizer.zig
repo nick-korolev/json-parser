@@ -1,12 +1,5 @@
 const std = @import("std");
 
-const TokenType = enum {
-    String,
-    Number,
-};
-
-const Token = struct { Type: TokenType, RawValue: []const u8 };
-
 pub const Tokenizer = struct {
     source: []const u8,
     index: usize,
@@ -39,8 +32,6 @@ pub const Tokenizer = struct {
             tokens.deinit();
         }
 
-        try tokens.append(try allocator.dupe(u8, "{"));
-
         var current_token = std.ArrayList(u8).init(allocator);
         defer current_token.deinit();
 
@@ -71,8 +62,6 @@ pub const Tokenizer = struct {
         if (current_token.items.len > 0) {
             try tokens.append(try current_token.toOwnedSlice());
         }
-
-        std.debug.print("tokens {s}", .{tokens.items});
 
         return tokens;
     }
