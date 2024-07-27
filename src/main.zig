@@ -19,10 +19,14 @@ pub fn main() !void {
     const tokens_list = try Tokenizer.parse(allocator);
     defer {
         for (tokens_list.items) |token| {
-            allocator.free(token);
+            allocator.free(token.raw_value);
         }
         tokens_list.deinit();
     }
 
-    _ = try ast.buildAST(allocator, &tokens_list);
+    for (tokens_list.items) |token| {
+        std.debug.print("token: {}\n", .{token});
+    }
+
+    // _ = try ast.buildAST(allocator, &tokens_list);
 }
