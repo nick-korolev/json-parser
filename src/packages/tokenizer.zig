@@ -11,7 +11,7 @@ pub const TokenType = enum {
     ArrayClose,
 };
 
-pub const Token = struct { line: usize, column: usize, offset: usize, token_type: TokenType, raw_value: []const u8 };
+pub const Token = struct { line: usize, column: usize, offset: usize, token_type: TokenType, raw_value: []const u8, value: value_parser.ParsedValue };
 
 fn get_token_type(char: u8) TokenType {
     return switch (char) {
@@ -98,6 +98,7 @@ pub const Tokenizer = struct {
             .line = self.line,
             .raw_value = curr_token_val,
             .token_type = .KeyOrValue,
+            .value = value_parser.parse_string(&curr_token_val),
         };
         try tokens.append(token);
 
@@ -112,6 +113,7 @@ pub const Tokenizer = struct {
             .line = self.line,
             .raw_value = curr_token_val,
             .token_type = get_token_type(char),
+            .value = value_parser.parse_string(&curr_token_val),
         };
         try tokens.append(token);
     }
