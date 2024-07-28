@@ -60,14 +60,14 @@ pub const Tokenizer = struct {
             switch (char) {
                 '{', '}', ':' => {
                     if (current_token_raw_value.items.len > 0) {
-                        try self.appendCurrentToken(&tokens, &current_token_raw_value, allocator);
+                        try self.append_current_token(&tokens, &current_token_raw_value, allocator);
                     }
 
-                    try self.appendSingleCharToken(&tokens, char, allocator);
+                    try self.append_single_char_token(&tokens, char, allocator);
                 },
                 ' ', '\t', '\n', '\r' => {
                     if (current_token_raw_value.items.len > 0) {
-                        try self.appendCurrentToken(&tokens, &current_token_raw_value, allocator);
+                        try self.append_current_token(&tokens, &current_token_raw_value, allocator);
                     }
                     if (char == '\n') {
                         self.column = 1;
@@ -84,13 +84,13 @@ pub const Tokenizer = struct {
         }
 
         if (current_token_raw_value.items.len > 0) {
-            try self.appendCurrentToken(&tokens, &current_token_raw_value, allocator);
+            try self.append_current_token(&tokens, &current_token_raw_value, allocator);
         }
 
         return tokens;
     }
 
-    fn appendCurrentToken(self: *Tokenizer, tokens: *std.ArrayList(Token), current_token_raw_value: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
+    fn append_current_token(self: *Tokenizer, tokens: *std.ArrayList(Token), current_token_raw_value: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
         const curr_token_val = try allocator.dupe(u8, current_token_raw_value.items);
         const token = Token{
             .offset = self.index - curr_token_val.len,
@@ -105,7 +105,7 @@ pub const Tokenizer = struct {
         current_token_raw_value.clearRetainingCapacity();
     }
 
-    fn appendSingleCharToken(self: *Tokenizer, tokens: *std.ArrayList(Token), char: u8, allocator: std.mem.Allocator) !void {
+    fn append_single_char_token(self: *Tokenizer, tokens: *std.ArrayList(Token), char: u8, allocator: std.mem.Allocator) !void {
         const curr_token_val = try allocator.dupe(u8, &[_]u8{char});
         const token = Token{
             .offset = self.index,
