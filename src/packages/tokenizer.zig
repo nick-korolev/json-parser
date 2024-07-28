@@ -100,6 +100,7 @@ pub const Tokenizer = struct {
             .token_type = .KeyOrValue,
         };
         try tokens.append(token);
+
         current_token_raw_value.clearRetainingCapacity();
     }
 
