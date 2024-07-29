@@ -11,7 +11,13 @@ pub const TokenType = enum {
     ArrayClose,
 };
 
-pub const Token = struct { line: usize, column: usize, offset: usize, token_type: TokenType, raw_value: []const u8, value: value_parser.ParsedValue };
+pub const Token = struct {
+    line: usize,
+    column: usize,
+    offset: usize,
+    token_type: TokenType,
+    raw_value: []const u8,
+};
 
 fn get_token_type(char: u8) TokenType {
     return switch (char) {
@@ -43,78 +49,67 @@ pub const Tokenizer = struct {
     pub fn deinit(_: *Tokenizer) void {}
 
     pub fn parse(self: *Tokenizer, allocator: std.mem.Allocator) !std.ArrayList(Token) {
-        var tokens = std.ArrayList(Token).init(allocator);
-        errdefer {
-            for (tokens.items) |token| {
-                allocator.free(token.raw_value);
-            }
-            tokens.deinit();
-        }
+        var tokens = try std.ArrayList(Token).initCapacity(allocator, self.source.len / 10);
+        errdefer tokens.deinit();
 
-        var current_token_raw_value = std.ArrayList(u8).init(allocator);
-        defer current_token_raw_value.deinit();
+        var token_start = self.index;
 
         while (self.index < self.source.len) {
             const char = self.source[self.index];
 
             switch (char) {
                 '{', '}', ':' => {
-                    if (current_token_raw_value.items.len > 0) {
-                        try self.append_current_token(&tokens, &current_token_raw_value, allocator);
+                    if (self.index > token_start) {
+                        try tokens.append(Token{
+                            .offset = token_start,
+                            .column = self.column - (self.index - token_start),
+                            .line = self.line,
+                            .raw_value = self.source[token_start..self.index],
+                            .token_type = .KeyOrValue,
+                        });
                     }
-
-                    try self.append_single_char_token(&tokens, char, allocator);
+                    try tokens.append(Token{
+                        .offset = self.index,
+                        .column = self.column,
+                        .line = self.line,
+                        .raw_value = self.source[self.index .. self.index + 1],
+                        .token_type = get_token_type(char),
+                    });
+                    token_start = self.index + 1;
                 },
                 ' ', '\t', '\n', '\r' => {
-                    if (current_token_raw_value.items.len > 0) {
-                        try self.append_current_token(&tokens, &current_token_raw_value, allocator);
+                    if (self.index > token_start) {
+                        try tokens.append(Token{
+                            .offset = token_start,
+                            .column = self.column - (self.index - token_start),
+                            .line = self.line,
+                            .raw_value = self.source[token_start..self.index],
+                            .token_type = .KeyOrValue,
+                        });
                     }
                     if (char == '\n') {
                         self.column = 1;
                         self.line += 1;
                     }
+                    token_start = self.index + 1;
                 },
-                else => {
-                    try current_token_raw_value.append(char);
-                },
+                else => {},
             }
 
             self.index += 1;
             self.column += 1;
         }
 
-        if (current_token_raw_value.items.len > 0) {
-            try self.append_current_token(&tokens, &current_token_raw_value, allocator);
+        if (self.index > token_start) {
+            try tokens.append(Token{
+                .offset = token_start,
+                .column = self.column - (self.index - token_start),
+                .line = self.line,
+                .raw_value = self.source[token_start..self.index],
+                .token_type = .KeyOrValue,
+            });
         }
 
         return tokens;
-    }
-
-    fn append_current_token(self: *Tokenizer, tokens: *std.ArrayList(Token), current_token_raw_value: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
-        const curr_token_val = try allocator.dupe(u8, current_token_raw_value.items);
-        const token = Token{
-            .offset = self.index - curr_token_val.len,
-            .column = self.column - curr_token_val.len,
-            .line = self.line,
-            .raw_value = curr_token_val,
-            .token_type = .KeyOrValue,
-            .value = value_parser.parse_string(&curr_token_val),
-        };
-        try tokens.append(token);
-
-        current_token_raw_value.clearRetainingCapacity();
-    }
-
-    fn append_single_char_token(self: *Tokenizer, tokens: *std.ArrayList(Token), char: u8, allocator: std.mem.Allocator) !void {
-        const curr_token_val = try allocator.dupe(u8, &[_]u8{char});
-        const token = Token{
-            .offset = self.index,
-            .column = self.column,
-            .line = self.line,
-            .raw_value = curr_token_val,
-            .token_type = get_token_type(char),
-            .value = value_parser.parse_string(&curr_token_val),
-        };
-        try tokens.append(token);
     }
 };
