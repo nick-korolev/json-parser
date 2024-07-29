@@ -21,7 +21,7 @@ pub fn main() !void {
     }
     const allocator = gpa.allocator();
 
-    const file = try file_reader.read_file("./test-data/large-file.json");
+    const file = try file_reader.read_file("./test-data/file.json");
 
     // const json = "{ \"test\": 1 }";
     var Tokenizer = tokenizer_pkg.Tokenizer.init(file);
@@ -32,9 +32,9 @@ pub fn main() !void {
         tokens_list.deinit();
     }
 
-    // for (tokens_list.items) |token| {
-    //     std.debug.print("token: {}\n, token_value: {s}\n", .{ token, token.raw_value });
-    // }
+    for (tokens_list.items) |token| {
+        std.debug.print("token: {}\n, token_value: {s}\n", .{ token, token.raw_value });
+    }
 
     // _ = try ast.buildAST(allocator, &tokens_list);
 }

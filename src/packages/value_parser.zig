@@ -25,7 +25,7 @@ pub const ParsedValue = union(enum) {
     }
 };
 
-pub fn parse_string(str: *const []u8) ParsedValue {
+pub fn parse_string(str: *const []const u8) ParsedValue {
     const str_val = str.*;
     if (std.mem.eql(u8, str_val, "true")) return ParsedValue{ .boolean = true };
     if (std.mem.eql(u8, str_val, "false")) return ParsedValue{ .boolean = false };

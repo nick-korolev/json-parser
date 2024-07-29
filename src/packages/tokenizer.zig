@@ -17,6 +17,7 @@ pub const Token = struct {
     offset: usize,
     token_type: TokenType,
     raw_value: []const u8,
+    value: value_parser.ParsedValue,
 };
 
 fn get_token_type(char: u8) TokenType {
@@ -60,31 +61,39 @@ pub const Tokenizer = struct {
             switch (char) {
                 '{', '}', ':' => {
                     if (self.index > token_start) {
+                        const raw_value = self.source[token_start..self.index];
                         try tokens.append(Token{
                             .offset = token_start,
                             .column = self.column - (self.index - token_start),
                             .line = self.line,
-                            .raw_value = self.source[token_start..self.index],
+                            .raw_value = raw_value,
+                            .value = value_parser.parse_string(&raw_value),
                             .token_type = .KeyOrValue,
                         });
                     }
+
+                    const raw_value = self.source[token_start..self.index];
+
                     try tokens.append(Token{
                         .offset = self.index,
                         .column = self.column,
                         .line = self.line,
                         .raw_value = self.source[self.index .. self.index + 1],
                         .token_type = get_token_type(char),
+                        .value = value_parser.parse_string(&raw_value),
                     });
                     token_start = self.index + 1;
                 },
                 ' ', '\t', '\n', '\r' => {
                     if (self.index > token_start) {
+                        const raw_value = self.source[token_start..self.index];
                         try tokens.append(Token{
                             .offset = token_start,
                             .column = self.column - (self.index - token_start),
                             .line = self.line,
                             .raw_value = self.source[token_start..self.index],
                             .token_type = .KeyOrValue,
+                            .value = value_parser.parse_string(&raw_value),
                         });
                     }
                     if (char == '\n') {
@@ -101,12 +110,14 @@ pub const Tokenizer = struct {
         }
 
         if (self.index > token_start) {
+            const raw_value = self.source[token_start..self.index];
             try tokens.append(Token{
                 .offset = token_start,
                 .column = self.column - (self.index - token_start),
                 .line = self.line,
                 .raw_value = self.source[token_start..self.index],
                 .token_type = .KeyOrValue,
+                .value = value_parser.parse_string(&raw_value),
             });
         }
 
